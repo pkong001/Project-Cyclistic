@@ -1,0 +1,372 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+guide line
+https://d3c33hcgiwev3.cloudfront.net/aacF81H_TsWnBfNR_x7FIg_36299b28fa0c4a5aba836111daad12f1_DAC8-Case-Study-1.pdf?Expires=1661990400&Signature=WGYqFMnynP7GOO~VUq604LPk-JePSH7FYs~AOG~1oiW-7rl02szCRSFZx8IhMzxRMCzXZge5S~MYOK0d7gSzQPhXw3lAOfRXxJbK9cL-ZhjlSaXbO0xV7SbVfC0VQfeLvWw~s-UMs1bt73A0g~I~Iqn6Vuf5SlutfchmHtNAclk_&Key-Pair-Id=APKAJLTNE6QMUY6HBC5A
+
+https://www.kaggle.com/code/codyfreeman/cyclistic-google-data-analytics-case-study/notebook
+
+##Background
+* The Cyclistic is a fiction company launched in 2016, offering a bike-share solution. Since then, the business has grown and has over 692 stations across Chicago. The bikes can be unlocked from one station and returned to any other station in the system anytime.
+* There are two types of Cyclistic users, those who purchase casual tickets and those who are annual memberships. The marketing team believes that maximizing the number of annual members will be the key to future growth. Rather than creating a marketing campaign that targets all-new customers, there is a very good chance to convert casual riders into members by investigating their behavior.
+
+##Consider key stakeholders.
+* Cyclistic executive team,
+* Marketing Analytics team
+* Customers
+
+##Problem
+* How do annual members and casual riders use Cyclistic bikes differently? 
+* What is the most effective marketing strategy to convert Cyclistic's casual riders to annual memberships?
+
+##Goal
+* Identify differences in behavior between member and casual riders. How do we convert casual into member riders?
+
+##Preparation (data source)
+* The data has been downloaded from https://divvy-tripdata.s3.amazonaws.com/index.html and stored on Google Drive.
+* Cyclistic is a fiction company for study purposes; however, the data provided by the company is real and tangible.
+* The data is provided by Cyclistic, the company which originated and generated the data, and since the data is for learning purposes, we assume that the data is credible, reliable, original, comprehensive, current, and cited, which it is.
+
+Loading packages
+```{r,load packages}
+#To make sure that the packages is loaded sometime we load sub packages seperately
+library("tidyverse")
+library("here")
+library("skimr")
+library("janitor")
+library("dplyr")
+library("lubridate")
+library("tidyr")
+library("reshape2")
+```
+
+The Code chunk below will import all files, including the historical record from Jan 2017 to Jul 2022.
+
+There are columns containing information we needed for analysis which included:
+* Trip ID
+* Start service time
+* End service time
+* Start station
+* End station
+* Station ID
+* User types
+
+The other columns which are not necessary will be later removed.
+
+The code chunk below will load files.
+
+```{r, Loading csv}
+#2017
+p10 <- read_csv("P1/201701_to_03.csv")
+p11 <- read_csv("P1/201704_to_06.csv")
+p12 <- read_csv("P1/201707_to_09.csv")
+p13 <- read_csv("P1/201710_to_12.csv")
+#2018
+p14 <- read_csv("P1/201801_to_03.csv")
+p15 <- read_csv("P1/201804_to_06.csv")
+p16 <- read_csv("P1/201807_to_09.csv")
+p17 <- read_csv("P1/201810_to_12.csv")
+#2019
+p18 <- read_csv("P1/201901_to_03.csv")
+p19 <- read_csv("P1/201904_to_06.csv")
+p20 <- read_csv("P1/201907_to_09.csv")
+p21 <- read_csv("P1/201910_to_12.csv")
+#2020
+p22 <- read_csv("P1/202001_to_03.csv")
+p23 <- read_csv("P1/202004.csv")
+p24 <- read_csv("P1/202005.csv")
+p25 <- read_csv("P1/202006.csv")
+p26 <- read_csv("P1/202007.csv")
+p27 <- read_csv("P1/202008.csv")
+p28 <- read_csv("P1/202009.csv")
+p29 <- read_csv("P1/202010.csv")
+p30 <- read_csv("P1/202011.csv")
+p31 <- read_csv("P1/202012.csv")
+#2021
+p32 <- read_csv("P1/202101.csv")
+p33 <- read_csv("P1/202102.csv")
+p34 <- read_csv("P1/202103.csv")
+p35 <- read_csv("P1/202104.csv")
+p36 <- read_csv("P1/202105.csv")
+p37 <- read_csv("P1/202106.csv")
+p38 <- read_csv("P1/202107.csv")
+p39 <- read_csv("P1/202108.csv")
+p40 <- read_csv("P1/202109.csv")
+p41 <- read_csv("P1/202110.csv")
+p42 <- read_csv("P1/202111.csv")
+p43 <- read_csv("P1/202112.csv")
+#2022
+p44 <- read_csv("P1/202201.csv")
+p45 <- read_csv("P1/202202.csv")
+p46 <- read_csv("P1/202203.csv")
+p47 <- read_csv("P1/202204.csv")
+p48 <- read_csv("P1/202205.csv")
+p49 <- read_csv("P1/202206.csv")
+p50 <- read_csv("P1/202207.csv")
+```
+     
+##Transformation & Manipulation
+
+These steps will be performed during data cleaning processes to ensure data integrity.
+* Make sure there is no incompleted, duplicated, or corrupted data.
+* Verify change as data is collected over time.
+* Make sure that the data is in the exact correct form & format
+
+
+The code chunk below will combine data sets into one large set and fix the incomplete and inconsistent data.
+
+```{r, Union data sets}
+
+g2020 <- rbind(p22,p23,p24,p25,p26,p27,p28,p29,p30)
+
+#end_station_id and start_station_id in 2020 is in double format therefore; convert into character format.
+g2020$end_station_id <- as.character(g2020$end_station_id)
+g2020$start_station_id <- as.character(g2020$end_station_id)
+
+#p31 contains 2020 data in the correct format.
+g2020 <- union(g2020,p31)
+
+#Combine 2021 and 2022.
+g2021 <- rbind(p32,p33,p34,p35,p36,p37,p38,p39,p40,p41,p42,p43)
+g2022 <- rbind(p44,p45,p46,p47,p48,p49,p50)
+
+#Combine 2020, 2021, and 2022.
+g2020_to_g2022 <- union(union(g2020,g2021),g2022)
+
+#P14 and P19 got inconsistent column names; therefore, rename them before combining.
+#P14 contains 2018 data, and P19 contains 2019 data; therefore, we have to rename them separately.
+p14 <- read_csv("P1/201801_to_03.csv")
+p14 <- p14 %>%
+  rename(trip_id = "01 - Rental Details Rental ID"  ) %>% 
+  rename(start_time = "01 - Rental Details Local Start Time" ) %>% 
+  rename(end_time = "01 - Rental Details Local End Time" ) %>% 
+  rename(bikeid = "01 - Rental Details Bike ID") %>% 
+  rename(tripduration = "01 - Rental Details Duration In Seconds Uncapped") %>% 
+  rename(from_station_id = "03 - Rental Start Station ID" ) %>% 
+  rename(from_station_name = "03 - Rental Start Station Name" ) %>% 
+  rename(to_station_id = "02 - Rental End Station ID" ) %>% 
+  rename(to_station_name = "02 - Rental End Station Name" ) %>% 
+  rename(usertype = "User Type" ) %>% 
+  rename(gender = "Member Gender" ) %>% 
+  rename(birthyear = "05 - Member Details Member Birthday Year" )
+
+p19 <- read_csv("P1/201904_to_06.csv")
+p19 <- p19 %>% 
+  rename(trip_id = "01 - Rental Details Rental ID"  ) %>% 
+  rename(start_time = "01 - Rental Details Local Start Time" ) %>% 
+  rename(end_time = "01 - Rental Details Local End Time" ) %>% 
+  rename(bikeid = "01 - Rental Details Bike ID") %>% 
+  rename(tripduration = "01 - Rental Details Duration In Seconds Uncapped") %>% 
+  rename(from_station_id = "03 - Rental Start Station ID" ) %>% 
+  rename(from_station_name = "03 - Rental Start Station Name" ) %>% 
+  rename(to_station_id = "02 - Rental End Station ID" ) %>% 
+  rename(to_station_name = "02 - Rental End Station Name" ) %>% 
+  rename(usertype = "User Type" ) %>% 
+  rename(gender = "Member Gender" ) %>% 
+  rename(birthyear = "05 - Member Details Member Birthday Year" )
+
+#start_time and end_time in 2017 were in character format; therefore, convert them into dttm format
+g2017 <- rbind(p10,p11,p12,p13)
+g2017$start_time <- strptime(g2017$start_time, format="%m/%d/%Y%H:%M:%S")
+g2017$end_time <- strptime(g2017$end_time, format="%m/%d/%Y%H:%M:%S")
+
+#Combine 2018 and 2019.
+g2018 <- rbind(p14,p15,p16,p17)
+g2019 <- rbind(p18,p19,p20,p21)
+
+#Combine 2017, 2018, and 2019.
+g2017_to_g2019 <- union(union(g2017,g2018),g2019)
+
+#Reorder before combining two data sets into one large data set.
+#We removed tripduration (will calculate later) since the tripduration data collected is incomplete.
+#We also added rideable_type column for 2017, 2018, and 2019, since there is only one bike type at the time, which is docked bike.
+#We also remove unnecessary columns, which are latitude, longitude, and bike ID.
+g1 <- g2017_to_g2019 %>% 
+  add_column(rideable_type = "one_type") %>% 
+  select(trip_id,start_time,end_time,from_station_id,from_station_name,to_station_id,to_station_name,usertype,rideable_type) 
+g2 <- g2020_to_g2022 %>% 
+  select(ride_id,started_at,ended_at,start_station_id,start_station_name,end_station_id,end_station_name,member_casual,rideable_type)
+
+#Some data in g1(2017 to 2019) were incorrect formatted; therefore, convert it before combining with g2(2020 to 2022)
+g1$trip_id <- as.character(g1$trip_id)
+g1$from_station_id <- as.character(g1$from_station_id)
+g1$to_station_id <- as.character(g1$to_station_id)
+
+#Rename column in g1(2017 to 2019) before combining with g2(2020 to 2022).
+g1 <- g1 %>% 
+  rename(ride_id  = trip_id  ) %>% 
+  rename(started_at = start_time ) %>% 
+  rename(ended_at  = end_time ) %>% 
+  rename(start_station_id  = from_station_id ) %>% 
+  rename(start_station_name = from_station_name ) %>% 
+  rename(end_station_id = to_station_id ) %>% 
+  rename(end_station_name = to_station_name ) %>% 
+  rename(member_casual = usertype )
+
+#Now, we combine g2017_to_g2019 with g2020_to_g2022 to create one large data set for analysis.
+the_data <- union(g1,g2)
+write.csv(the_data,"CylcisticLarge.csv")
+```
+To remove incompleted data, the code chuck below will remove incomplete data.
+
+```{r}
+the_data_no_na <- drop_na(the_data)
+```
+
+Adding ride duration column to calculate each ride time in min.
+
+```{r, adding time duration}
+the_data_no_na <- the_data_no_na %>%
+  mutate(duration = ended_at - started_at)
+```
+
+In some rows ended_at value has a higher value than started_at, which is impossible, meaning there is some error in data collection processes, therefore, dropping the data, which is considered as 0.06% of all data points. However, further investigation of this incorrect data point must be conducted by the company.
+
+The code chunk below will filter out false collected data which has ended_at more than started_at.
+
+```{r, Filtering out false collected data _ time service}
+the_data_no_na <- the_data_no_na %>%
+  filter(ended_at >= started_at)
+```
+
+Some data in duration column resulted in negative values, this might be because of errors in collection processes. However, these data points are considered a small number compared with 20,971,703 million; therefore dropping the rows where the value is less than or equal to zero. All negative values are considered as 0.05% of all data points, however, further investigation of this incorrect data point must be conducted by the company.
+
+```{r,Filtering out false collected data _ time service zero}
+the_data_no_na %>%
+  filter(duration <= 0) %>% 
+  arrange(duration)
+```
+
+After dropping the negative values, their is some small number persist which happened at HQ QR station, this might be rides used by company personnel itself; therefore, filter out start_station_id = 675 & end_station_id = 675, and filter out ride duration that has less value than 30 (we use this number to classify it as false rent order; however further investigation have to be).
+The filtered-out data points are approximately 0.46% of the whole data point.
+
+```{r,Filtering out false collected data _ Head quarter usage}
+the_data_no_na <- the_data_no_na %>% 
+  filter(start_station_id != 675 | the_data_no_na$end_station_id != 675) %>% 
+  filter(duration >= 30) %>% 
+  arrange(-duration)
+```
+
+The code chunk below will add information for later analysis
+* Adding years, months, days, and time in hr for the time when started rides.
+* Adding time duration in other formats (HMS, hr,  min) for ride duration.
+
+```{r, Manipulating}
+the_data_e <- the_data_no_na %>% 
+  mutate(start_year = year(the_data_no_na$started_at)) %>% 
+  mutate(start_month = month(the_data_no_na$started_at)) %>% 
+  mutate(start_day = day(the_data_no_na$started_at)) %>% 
+  mutate(start_time = as.numeric(format(the_data_no_na$started_at, format = "%H"))) %>% 
+  # or mutate(start_time = format(the_data$started_at, format = "%H:%M:%S"))
+  mutate(start_days = format(the_data_no_na$started_at, format = "%a")) %>% 
+  mutate(duration_time = hms::hms(seconds_to_period(the_data_no_na$duration))) %>% 
+  mutate(duration_in_min = as.numeric(duration/60)) %>% 
+  mutate(duration_in_hour = as.numeric(duration/60/60))
+```
+
+Some user-type data were collected in different values, however, they imply the same meaning; therefore the code chunk below, we convert the text "Subscriber" into "member" and "Customer" into "casual".
+
+```{r, Reformating value}
+the_data_e$member_casual[the_data_e$member_casual == "Subscriber"] <- "member"
+the_data_e$member_casual[the_data_e$member_casual == "Customer"] <- "casual"
+```
+
+As we clean the data, we notice that the data in some months in 2016 and 2017 is missing, and three years is sufficient for analysis and visualization; therefore, filter out the year 2016 and 2017.
+The code chunk below creates files in .csv format, then export for further analysis in excel.
+
+```{r,Creating the_data_days}
+#Creating the_data_days.csv - use to create visualization 01
+the_data_days <- the_data_e %>% 
+  drop_na() %>% 
+  filter(start_year != "2016" & start_year != "2017") %>% 
+  group_by(start_days, member_casual) %>% 
+  summarize(duration_mean_in_minute = mean(duration_in_min),
+            count_datapoint = n(),
+            percent = 100 * n() / nrow( the_data_e ))
+the_data_days
+write.csv(the_data_days,"the_data_days.csv")
+
+#Creating the_data_days.csv - use to create visualization 02
+the_data_ride <- the_data_e %>% 
+  drop_na() %>% 
+  filter(start_year != "2016" & start_year != "2017") %>% 
+  filter(rideable_type != "one_type") %>% 
+  group_by(start_year, start_month, rideable_type,member_casual) %>% 
+  summarize(count_datapoint = n())
+write.csv(the_data_ride,"the_data_ride02.csv")
+```
+
+##Descriptive Analysis
+Average ride time = 23 min
+Average ride time (member) = 42 min
+Average ride time (casual) = 14 min
+standard deviation of ride time =
+standard deviation of ride time (member) = 214
+standard deviation of ride time (casual) = 615
+Average ride each month = 425,521 rides
+
+We run the code chunk below to retrieve the descriptive analysis values.
+
+```{r}
+the_data_e %>% 
+  drop_na() %>% 
+  filter(start_year != "2016" & start_year != "2017" ) %>% 
+  summarize(mean(duration_in_min), 
+            sd(duration_in_min))
+
+the_data_e %>% 
+  drop_na() %>% 
+  filter(start_year != "2016" & start_year != "2017" ) %>% 
+  group_by(member_casual) %>% 
+  summarize(mean(duration_in_min), 
+            sd(duration_in_min))
+          
+
+the_data_e %>% 
+  drop_na() %>% 
+  filter(start_year == "2020" & start_year != "2021") %>% 
+  summarize(n()/24)
+```
+##Visualization 01
+Throughout the weekdays, each day's number of rides is almost identical, ranging from 14% to 16%.
+![Plot](https://raw.githubusercontent.com/pkong001/store2/main/Folder%2001/Pie_Chart.jpg)
+However, after categorizing by membership, we can see that the casual riders have a higher number of rides on Saturday and Sunday. In comparison, the membered riders result in fewer rides on the days.
+![Plot](https://raw.githubusercontent.com/pkong001/store2/main/Folder%2001/Number_of_ride_vs_Weekdays.jpg)
+The chart shows the ride time between the member and casual riders. The casual riders tend to have a longer ride duration than member riders.
+* Casual rider's average ride time = 42 min
+* Member rider's average ride time = 14 min
+![Plot](https://raw.githubusercontent.com/pkong001/store2/main/Folder%2001/Average_ride_time_VS_Weekdays.jpg)
+
+##Visualization 02
+In the visualization below, we can see the shifting in trend; classic and electric bikes were raised and replaced docked bike demand. The shifting trend started in 2021, probably after the implementation of new products(classic and electric bike). Now in 2022, The majority of member and casual riders are preferred classic and electric bike over the docked bike.
+![Plot](https://raw.githubusercontent.com/pkong001/store2/main/Folder%2001/Proportion_of_ride_types_VS_Time.jpg)
+
+By plotting the number of rides with time in years and months, we can see that the peak rides are during the summer; the peak might be a result of traveling and tourists during the summer.
+![Plot](https://raw.githubusercontent.com/pkong001/store2/main/Folder%2001/Number_of_ride_VS_Time.jpg)
+
+Peak in each day
+* Moderate ride between 8:00AM to 3:00PM
+* Peak ride between 3:00PM to 5:00PM
+
+```{r, Plotting hour use}
+hr_time <- the_data_e %>% 
+  count(start_time, sort = T)
+
+ggplot(data = hr_time) + geom_line(aes(x=start_time,y=n))
+```
+##Key findings
+* On average casual riders tend to have a longer time per ride than member riders (42 minutes on average for casual riders and 14 minutes on average for member riders).
+* Casual riders have a higher number of rides on Saturday and Sunday, while member riders have a higher number of rides during weekdays
+* Peak ride is between 3:00 PM and 5:00 PM
+* Docked bike are getting less popular while electric and classic bike are becoming more popular.
+* Peak rides in a year were in the months of June, July, August, and September.
+
+##Recommendation
+* Offer monthly subscription with no yearly contract to attract more customers in June, July, August, and September. Or weekends membership to attract casual riders or other offerings that appeal to someone who will take a ride during the summer and weekends.
+* Offer a discount for a long time per ride for member users, this may attract casual users who take a long time per ride.
+
+##Limitation
+These are the reports in which, for study purposes, some relevant and more comprehensive data might not be included to prevent overcomplicated.
